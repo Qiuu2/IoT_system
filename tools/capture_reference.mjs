@@ -9,9 +9,10 @@
  *   - 页面结构大纲（各区块的层级与文本，不含实际业务数据）
  *   - 设计 token（背景/文字/主色、字号、圆角、间距，从计算样式里取真值）
  *
- * 输出在 capture/ 目录。Ctrl+C 结束。
+ * 输出在 capture/ 目录。Ctrl+C 结束。之后跑 tools/snapshot_pages.mjs
+ * 可对同一批 URL 再存一份 SingleFile 完整快照（复用这里的登录态）。
  *
- * 注意：capture/auth.json 里是你的登录会话，只留本地，不要发给任何人。
+ * 注意：capture/profile/ 里是你的登录会话，只留本地，不要发给任何人。
  */
 import { chromium } from 'playwright';
 import fs from 'fs';
@@ -23,7 +24,7 @@ if (!START) {
   process.exit(1);
 }
 const OUT = 'capture';
-const AUTH = path.join(OUT, 'auth.json');
+const URLS = path.join(OUT, 'urls.txt');   // 供 snapshot_pages.mjs 消费
 fs.mkdirSync(OUT, { recursive: true });
 
 const slug = (u) => {
@@ -86,12 +87,15 @@ const OUTLINE = () => {
   return lines.slice(0, 900).join('\n');
 };
 
-const b = await chromium.launch({ headless: false, args: ['--start-maximized'] });
-const ctx = await b.newContext({
+// 用持久化 profile 而非 storageState：SingleFile 也能复用同一份登录态，
+// 你只需登录一次，两个工具都不用再登。
+const PROFILE = path.join(OUT, 'profile');
+const ctx = await chromium.launchPersistentContext(PROFILE, {
+  headless: false,
   viewport: null,
-  storageState: fs.existsSync(AUTH) ? AUTH : undefined,
+  args: ['--start-maximized'],
 });
-const page = await ctx.newPage();
+const page = ctx.pages()[0] || await ctx.newPage();
 await page.goto(START, { waitUntil: 'domcontentloaded' });
 
 console.log('\n浏览器已打开。请登录，然后正常点击各个菜单。');
@@ -124,12 +128,13 @@ setInterval(async () => {
   if (done.has(url)) return;
   done.add(url);
   await capture(url);
-  await ctx.storageState({ path: AUTH });
+  fs.writeFileSync(URLS, [...done].join('\n') + '\n');
 }, 1500);
 
 process.on('SIGINT', async () => {
   console.log(`\n共采集 ${n} 个页面 → ${OUT}/`);
-  console.log('提醒：capture/auth.json 含登录会话，发文件时请剔除。');
-  await b.close().catch(() => {});
+  console.log(`URL 清单已写入 ${URLS}，接着跑：node tools/snapshot_pages.mjs`);
+  console.log('提醒：capture/profile/ 含登录会话，发文件时请整个剔除。');
+  await ctx.close().catch(() => {});
   process.exit(0);
 });
