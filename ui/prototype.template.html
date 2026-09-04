@@ -1,0 +1,616 @@
+<title>会议运维控制台原型</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap">
+<style>
+:root{
+  --plane:#f9f9f7; --surface:#fcfcfb; --surface-2:#f2f2ef; --surface-3:#e9e9e4;
+  --ink:#0b0b0b; --ink-2:#52514e; --muted:#898781;
+  --grid:#e1e0d9; --axis:#c3c2b7; --border:rgba(11,11,11,.10);
+  --accent:#2a78d6; --accent-soft:#cde2fb; --accent-2:#86b6ef;
+  --good:#0ca30c; --warning:#fab219; --critical:#d03b3b;
+  --good-bg:#e3f5e3; --warning-bg:#fdf1d5; --critical-bg:#fae0e0;
+  --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  --sans:"Inter","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --plane:#0d0d0d; --surface:#1a1a19; --surface-2:#232322; --surface-3:#2c2c2a;
+  --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+  --accent:#3987e5; --accent-soft:#12294a; --accent-2:#184f95;
+  --good:#0ca30c; --warning:#fab219; --critical:#d03b3b;
+  --good-bg:#0f2a0f; --warning-bg:#332708; --critical-bg:#360f0f;
+}}
+:root[data-theme="dark"]{
+  --plane:#0d0d0d; --surface:#1a1a19; --surface-2:#232322; --surface-3:#2c2c2a;
+  --ink:#ffffff; --ink-2:#c3c2b7; --muted:#898781;
+  --grid:#2c2c2a; --axis:#383835; --border:rgba(255,255,255,.10);
+  --accent:#3987e5; --accent-soft:#12294a; --accent-2:#184f95;
+  --good:#0ca30c; --warning:#fab219; --critical:#d03b3b;
+  --good-bg:#0f2a0f; --warning-bg:#332708; --critical-bg:#360f0f;
+}
+*{box-sizing:border-box}
+body{margin:0;background:var(--plane);color:var(--ink);font-family:var(--sans);
+     font-size:14px;line-height:1.55;-webkit-font-smoothing:antialiased}
+.mono{font-family:var(--mono);font-variant-numeric:tabular-nums}
+h1,h2,h3{margin:0;text-wrap:balance}
+button{font-family:inherit}
+
+/* ---------- chrome ---------- */
+.topbar{position:sticky;top:0;z-index:20;background:var(--surface);
+  border-bottom:1px solid var(--border);padding:0 20px;
+  display:flex;align-items:center;gap:18px;flex-wrap:wrap}
+.brand{display:flex;align-items:baseline;gap:9px;padding:12px 0}
+.brand b{font-size:15px;font-weight:600;letter-spacing:-.01em}
+.brand span{font-size:11px;color:var(--muted)}
+.tabs{display:flex;gap:2px;margin-left:auto}
+.tab{border:none;background:none;color:var(--ink-2);font-size:13.5px;
+  padding:14px 14px 12px;border-bottom:2px solid transparent;cursor:pointer}
+.tab:hover{color:var(--ink)}
+.tab[aria-selected="true"]{color:var(--accent);border-bottom-color:var(--accent);font-weight:500}
+.tab:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.stamp{font-size:11px;color:var(--muted);padding:12px 0;white-space:nowrap}
+.stamp .live{display:inline-block;width:6px;height:6px;border-radius:50%;
+  background:var(--good);margin-right:5px;vertical-align:1px}
+
+.banner{background:var(--warning-bg);border-bottom:1px solid var(--border);
+  padding:7px 20px;font-size:12px;color:var(--ink-2);display:flex;gap:8px;align-items:baseline}
+.banner b{color:var(--ink);font-weight:600}
+
+main{padding:18px 20px 40px;max-width:1400px;margin:0 auto}
+.view[hidden]{display:none}
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:8px}
+.panel > header{padding:12px 16px;border-bottom:1px solid var(--border);
+  display:flex;align-items:baseline;gap:10px;flex-wrap:wrap}
+.panel > header h2{font-size:14px;font-weight:600}
+.panel > header .sub{font-size:11.5px;color:var(--muted)}
+.panel > header .right{margin-left:auto;font-size:11.5px;color:var(--muted)}
+
+/* ---------- kpi ---------- */
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:12px;margin-bottom:16px}
+.kpi{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:13px 16px}
+.kpi .lab{font-size:11.5px;color:var(--muted);letter-spacing:.02em}
+.kpi .val{font-family:var(--mono);font-size:27px;font-weight:500;line-height:1.15;
+  margin:3px 0 6px;font-variant-numeric:tabular-nums}
+.kpi .val small{font-size:14px;color:var(--muted)}
+.meter{height:5px;border-radius:3px;background:var(--surface-3);overflow:hidden;display:flex}
+.meter i{display:block;height:100%}
+.kpi .foot{font-size:11.5px;color:var(--ink-2);margin-top:6px}
+
+/* ---------- gantt ---------- */
+.gantt{padding:8px 16px 16px;overflow-x:auto}
+.gantt-inner{min-width:760px}
+.gcols{display:grid;grid-template-columns:120px 1fr;align-items:center}
+.ghead{position:relative;height:22px;border-bottom:1px solid var(--grid)}
+.ghead span{position:absolute;top:3px;transform:translateX(-50%);
+  font-family:var(--mono);font-size:10.5px;color:var(--muted)}
+.grow{border-bottom:1px solid var(--grid);min-height:30px}
+.grow:last-child{border-bottom:none}
+.gname{font-size:12px;color:var(--ink-2);padding-right:10px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.gtrack{position:relative;height:30px;background-image:repeating-linear-gradient(
+  to right,var(--grid) 0 1px,transparent 1px var(--tick))}
+.bar{position:absolute;top:5px;height:20px;border-radius:4px;
+  display:flex;align-items:center;padding:0 6px;font-size:11px;
+  white-space:nowrap;overflow:hidden;cursor:default;
+  box-shadow:0 0 0 2px var(--surface)}
+.bar.running{background:var(--accent);color:#fff}
+.bar.upcoming{background:var(--accent-soft);color:var(--accent);
+  border-left:3px solid var(--accent)}
+.bar.done{background:var(--surface-3);color:var(--muted)}
+.bar.cancelled{background:repeating-linear-gradient(135deg,
+  var(--surface-2) 0 4px,var(--surface-3) 4px 8px);color:var(--muted);
+  text-decoration:line-through;border:1px dashed var(--axis)}
+.gbody{position:relative}
+.nowline{position:absolute;top:0;bottom:0;width:2px;background:var(--critical);
+  z-index:3;pointer-events:none}
+.nowline::after{content:"现在";position:absolute;top:-15px;left:50%;transform:translateX(-50%);
+  font-size:10px;color:var(--critical);font-family:var(--mono);white-space:nowrap;
+  background:var(--surface);padding:0 3px}
+.legend{display:flex;gap:16px;flex-wrap:wrap;padding:10px 16px 0;font-size:11.5px;color:var(--ink-2)}
+.legend i{display:inline-block;width:11px;height:11px;border-radius:3px;
+  margin-right:6px;vertical-align:-1px}
+
+/* ---------- bars chart ---------- */
+.dist{padding:12px 16px 16px;display:flex;flex-direction:column;gap:7px}
+.drow{display:grid;grid-template-columns:118px 1fr 44px;gap:10px;align-items:center}
+.drow .dn{font-size:12px;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.drow .db{height:14px;background:var(--surface-3);border-radius:3px;overflow:hidden}
+.drow .db i{display:block;height:100%;background:var(--accent);border-radius:0 4px 4px 0}
+.drow .dv{font-family:var(--mono);font-size:12px;color:var(--ink);text-align:right}
+
+/* ---------- table ---------- */
+.tblwrap{overflow-x:auto}
+table{border-collapse:collapse;width:100%;font-size:12.5px}
+th{text-align:left;font-weight:500;font-size:11.5px;color:var(--muted);
+  padding:9px 12px;border-bottom:1px solid var(--border);white-space:nowrap;
+  position:sticky;top:0;background:var(--surface)}
+td{padding:8px 12px;border-bottom:1px solid var(--grid);vertical-align:middle}
+tr:last-child td{border-bottom:none}
+tbody tr:hover{background:var(--surface-2)}
+td.num{font-family:var(--mono);text-align:right;font-variant-numeric:tabular-nums}
+td.dim{color:var(--muted)}
+
+.pill{display:inline-flex;align-items:center;gap:5px;font-size:11px;
+  padding:2px 8px;border-radius:999px;white-space:nowrap;font-weight:500}
+.pill::before{content:"";width:6px;height:6px;border-radius:50%;background:currentColor;flex:none}
+.pill.ok{background:var(--good-bg);color:var(--good)}
+.pill.off{background:var(--surface-3);color:var(--muted)}
+.pill.crit{background:var(--critical-bg);color:var(--critical)}
+.pill.warn{background:var(--warning-bg);color:#8a5d00}
+:root[data-theme="dark"] .pill.warn,
+:root:not([data-theme="light"]) .pill.warn{color:var(--warning)}
+@media (prefers-color-scheme:light){:root:not([data-theme="dark"]) .pill.warn{color:#8a5d00}}
+.tag{font-size:11px;color:var(--muted);background:var(--surface-2);
+  padding:1px 7px;border-radius:4px;font-family:var(--mono)}
+
+/* ---------- layout ---------- */
+.split{display:grid;grid-template-columns:214px 1fr;gap:14px;align-items:start}
+.tree{padding:8px;max-height:640px;overflow:auto}
+.tnode{display:block;width:100%;text-align:left;border:none;background:none;
+  color:var(--ink-2);font-size:12.5px;padding:5px 9px;border-radius:5px;cursor:pointer}
+.tnode:hover{background:var(--surface-2);color:var(--ink)}
+.tnode[aria-pressed="true"]{background:var(--accent-soft);color:var(--accent);font-weight:500}
+.tnode:focus-visible{outline:2px solid var(--accent);outline-offset:-2px}
+.tnode.floor{font-size:11px;color:var(--muted);text-transform:none;
+  letter-spacing:.06em;margin-top:8px;cursor:default;font-family:var(--mono)}
+.tnode.floor:hover{background:none;color:var(--muted)}
+.tnode .cnt{float:right;font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:14px;align-items:start}
+.stack{display:flex;flex-direction:column;gap:14px}
+.toolbar{display:flex;gap:8px;align-items:center;flex-wrap:wrap;margin-bottom:12px}
+.btn{font-size:12.5px;padding:5px 12px;border-radius:6px;cursor:pointer;
+  border:1px solid var(--border);background:var(--surface);color:var(--ink-2)}
+.btn:hover{border-color:var(--accent);color:var(--accent)}
+.btn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:#fff}
+.btn:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+input[type=search]{font-family:inherit;font-size:12.5px;padding:5px 10px;border-radius:6px;
+  border:1px solid var(--border);background:var(--surface);color:var(--ink);min-width:170px}
+input[type=search]:focus-visible{outline:2px solid var(--accent);outline-offset:-1px}
+.empty{padding:26px;text-align:center;color:var(--muted);font-size:13px}
+
+.tip{position:fixed;z-index:60;pointer-events:none;background:var(--surface);
+  border:1px solid var(--border);border-radius:7px;padding:9px 11px;font-size:12px;
+  box-shadow:0 6px 26px rgba(0,0,0,.22);max-width:270px;line-height:1.5}
+.tip[hidden]{display:none}
+.tip b{display:block;margin-bottom:3px;font-size:12.5px}
+.tip .kv{color:var(--muted)}
+.tip .kv span{color:var(--ink-2);font-family:var(--mono)}
+
+footer{max-width:1400px;margin:0 auto;padding:0 20px 36px;font-size:11.5px;
+  color:var(--muted);line-height:1.75}
+@media (max-width:900px){
+  .split,.grid2{grid-template-columns:1fr}
+  .tree{max-height:210px}
+}
+@media (prefers-reduced-motion:reduce){*{transition:none!important;animation:none!important}}
+</style>
+
+<div class="topbar">
+  <div class="brand"><b>会议物联运维控制台</b><span>原型 · 数据来自设备模拟器</span></div>
+  <div class="tabs" role="tablist">
+    <button class="tab" role="tab" data-v="dash" aria-selected="true">工作台</button>
+    <button class="tab" role="tab" data-v="dev" aria-selected="false">设备</button>
+    <button class="tab" role="tab" data-v="alarm" aria-selected="false">告警</button>
+    <button class="tab" role="tab" data-v="book" aria-selected="false">日程</button>
+  </div>
+  <div class="stamp"><span class="live"></span><span id="stamp"></span></div>
+</div>
+
+<div class="banner">
+  <b>原型数据</b>
+  <span id="bannerTxt"></span>
+</div>
+
+<main>
+  <section class="view" id="v-dash">
+    <div class="kpis" id="kpis"></div>
+    <div class="stack">
+      <div class="panel">
+        <header>
+          <h2>今日日程</h2>
+          <span class="sub" id="dashDate"></span>
+          <span class="right">08:00 – 21:00</span>
+        </header>
+        <div class="legend">
+          <span><i style="background:var(--accent)"></i>进行中</span>
+          <span><i style="background:var(--accent-soft);border-left:3px solid var(--accent)"></i>待开始</span>
+          <span><i style="background:var(--surface-3)"></i>已结束</span>
+          <span><i style="background:var(--surface-2);border:1px dashed var(--axis)"></i>已取消</span>
+        </div>
+        <div class="gantt"><div class="gantt-inner" id="dashGantt"></div></div>
+      </div>
+      <div class="grid2">
+        <div class="panel">
+          <header><h2>设备构成</h2><span class="sub">按驱动类型</span>
+            <span class="right" id="devTotal"></span></header>
+          <div class="dist" id="devDist"></div>
+        </div>
+        <div class="panel">
+          <header><h2>在告故障</h2><span class="sub">按累计发生次数排序</span></header>
+          <div class="tblwrap"><table id="topAlarm"></table></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="v-dev" hidden>
+    <div class="split">
+      <div class="panel tree" id="tree"></div>
+      <div class="panel">
+        <header>
+          <h2>设备列表</h2><span class="sub" id="devScope"></span>
+          <span class="right"><input type="search" id="devSearch" placeholder="搜设备名 / 型号 / IP"></span>
+        </header>
+        <div class="tblwrap"><table id="devTable"></table></div>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="v-alarm" hidden>
+    <div class="toolbar">
+      <button class="btn" data-af="all" aria-pressed="true">全部</button>
+      <button class="btn" data-af="待处理" aria-pressed="false">待处理</button>
+      <button class="btn" data-af="严重" aria-pressed="false">严重</button>
+    </div>
+    <div class="panel">
+      <header><h2>告警中心</h2>
+        <span class="sub">同一设备的同一故障聚合为一条，只累加发生次数</span>
+        <span class="right" id="alarmCount"></span></header>
+      <div class="tblwrap"><table id="alarmTable"></table></div>
+    </div>
+  </section>
+
+  <section class="view" id="v-book" hidden>
+    <div class="toolbar" id="dayPicker"></div>
+    <div class="panel">
+      <header><h2>预约日程</h2><span class="sub" id="bookDate"></span>
+        <span class="right" id="bookCount"></span></header>
+      <div class="legend">
+        <span><i style="background:var(--accent)"></i>进行中</span>
+        <span><i style="background:var(--accent-soft);border-left:3px solid var(--accent)"></i>待开始</span>
+        <span><i style="background:var(--surface-3)"></i>已结束</span>
+        <span><i style="background:var(--surface-2);border:1px dashed var(--axis)"></i>已取消</span>
+      </div>
+      <div class="gantt"><div class="gantt-inner" id="bookGantt"></div></div>
+    </div>
+  </section>
+</main>
+
+<footer id="foot"></footer>
+<div class="tip" id="tip" hidden></div>
+
+<script id="payload" type="application/json">/*__PAYLOAD__*/</script>
+<script>
+(function(){
+"use strict";
+var D = JSON.parse(document.getElementById('payload').textContent);
+var NOW = new Date(D.generated_at);
+var $ = function(id){ return document.getElementById(id); };
+var esc = function(s){ return String(s == null ? '' : s)
+  .replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;'); };
+
+var rooms = D.spaces.filter(function(s){ return s.type === '会议室'; });
+var roomName = {}; rooms.forEach(function(r){ roomName[r.id] = r.name; });
+var floors = D.spaces.filter(function(s){ return s.type === '楼层'; });
+
+var ERR_TEXT = {
+  'unreachable: ConnectionRefusedError':'端口无响应，设备可能断电或未接入网络',
+  'timeout':'连接超时，网络不通或设备无响应'
+};
+function humanErr(e){
+  if (!e) return '';
+  return ERR_TEXT[e] || (e.indexOf('unreachable') === 0 ? '网络不可达' : e);
+}
+
+var DRIVER_LABEL = {
+  'pnc218':'智能时序电源','pnc809':'网络时序电源','rel08':'网络继电器',
+  'rs6608':'串口服务器','ir8':'红外扩展器','matrix88':'HDMI矩阵',
+  'chm9':'数字会议主机','generic-tcp':'通用设备（探活）'
+};
+var DAY_START = 8, DAY_END = 21, SPAN = DAY_END - DAY_START;
+
+function ymd(d){
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0')
+       + '-' + String(d.getDate()).padStart(2,'0');
+}
+function hoursOf(iso){
+  var t = new Date(iso);
+  return t.getHours() + t.getMinutes()/60;
+}
+function hhmm(iso){ return iso.slice(11,16); }
+
+/* ---------------- 甘特 ---------------- */
+var STATE_CLASS = {'进行中':'running','待开始':'upcoming','已结束':'done','已取消':'cancelled'};
+
+function renderGantt(el, date){
+  var todays = D.bookings.filter(function(b){ return b.start.slice(0,10) === date; });
+  var byRoom = {};
+  todays.forEach(function(b){ (byRoom[b.space_id] = byRoom[b.space_id] || []).push(b); });
+
+  var ticks = [];
+  for (var h = DAY_START; h <= DAY_END; h++) ticks.push(h);
+  var head = '<div class="gcols"><div></div><div class="ghead">' + ticks.map(function(h){
+    return '<span style="left:' + ((h-DAY_START)/SPAN*100).toFixed(3) + '%">'
+         + String(h).padStart(2,'0') + ':00</span>';
+  }).join('') + '</div></div>';
+
+  var isToday = date === ymd(NOW);
+  var nowPct = (NOW.getHours() + NOW.getMinutes()/60 - DAY_START) / SPAN * 100;
+  var showNow = isToday && nowPct >= 0 && nowPct <= 100;
+
+  var body = rooms.map(function(r){
+    var list = (byRoom[r.id] || []).slice().sort(function(a,b){
+      return a.start < b.start ? -1 : 1; });
+    var bars = list.map(function(b){
+      var s = Math.max(DAY_START, hoursOf(b.start));
+      var e = Math.min(DAY_END, hoursOf(b.end));
+      if (new Date(b.end).getDate() !== new Date(b.start).getDate()) e = DAY_END;
+      if (e <= s) return '';
+      var left = (s-DAY_START)/SPAN*100, w = (e-s)/SPAN*100;
+      var label = w > 9 ? esc(b.topic) : (w > 4.5 ? hhmm(b.start) : '');
+      return '<div class="bar ' + STATE_CLASS[b.state] + '" data-bk="' + esc(b.id) + '"'
+           + ' style="left:' + left.toFixed(3) + '%;width:' + w.toFixed(3) + '%">'
+           + label + '</div>';
+    }).join('');
+    return '<div class="gcols grow"><div class="gname" title="' + esc(r.name) + '">'
+         + esc(r.name) + '</div><div class="gtrack" style="--tick:'
+         + (100/SPAN).toFixed(4) + '%">' + bars + '</div></div>';
+  }).join('');
+
+  // 「现在」竖线整表一条：轨道区从左侧 120px 名称列之后开始
+  var nl = showNow
+    ? '<div class="nowline" style="left:calc(120px + (100% - 120px) * '
+      + (nowPct/100).toFixed(5) + ')"></div>'
+    : '';
+  el.innerHTML = head + '<div class="gbody">' + body + nl + '</div>';
+  return todays.length;
+}
+
+/* ---------------- 提示气泡 ---------------- */
+var tip = $('tip');
+var bookById = {}; D.bookings.forEach(function(b){ bookById[b.id] = b; });
+
+document.addEventListener('mouseover', function(e){
+  var bar = e.target.closest ? e.target.closest('.bar') : null;
+  if (!bar) return;
+  var b = bookById[bar.dataset.bk];
+  if (!b) return;
+  tip.innerHTML = '<b>' + esc(b.topic) + '</b>'
+    + '<div class="kv">时间 <span>' + hhmm(b.start) + '–' + hhmm(b.end) + '</span></div>'
+    + '<div class="kv">场地 <span>' + esc(b.space_name) + '</span></div>'
+    + '<div class="kv">科室 <span>' + esc(b.dept) + ' · ' + esc(b.owner) + '</span></div>'
+    + '<div class="kv">规模 <span>' + b.attendees + ' 人</span></div>'
+    + '<div class="kv">场景 <span>' + esc(b.scene) + '</span> · 状态 <span>'
+    + esc(b.state) + '</span></div>';
+  tip.hidden = false;
+});
+document.addEventListener('mousemove', function(e){
+  if (tip.hidden) return;
+  var x = e.clientX + 14, y = e.clientY + 14;
+  var r = tip.getBoundingClientRect();
+  if (x + r.width > innerWidth - 8) x = e.clientX - r.width - 14;
+  if (y + r.height > innerHeight - 8) y = e.clientY - r.height - 14;
+  tip.style.left = x + 'px'; tip.style.top = y + 'px';
+});
+document.addEventListener('mouseout', function(e){
+  if (e.target.closest && e.target.closest('.bar')) tip.hidden = true;
+});
+
+/* ---------------- 工作台 ---------------- */
+var online = D.devices.filter(function(d){ return d.online; }).length;
+var live = D.alarms.filter(function(a){ return !a.recovered; });
+var pending = live.filter(function(a){ return a.state === '待处理'; });
+var todayStr = ymd(NOW);
+var todays = D.bookings.filter(function(b){ return b.start.slice(0,10) === todayStr; });
+var usedRooms = {}; todays.forEach(function(b){
+  if (b.state !== '已取消') usedRooms[b.space_id] = 1; });
+var usedCount = Object.keys(usedRooms).length;
+
+function kpi(lab, val, unit, meter, foot){
+  return '<div class="kpi"><div class="lab">' + lab + '</div>'
+    + '<div class="val">' + val + (unit ? '<small> ' + unit + '</small>' : '') + '</div>'
+    + '<div class="meter">' + meter + '</div>'
+    + '<div class="foot">' + foot + '</div></div>';
+}
+$('kpis').innerHTML =
+  kpi('设备在线', online, '/ ' + D.devices.length,
+      '<i style="width:' + (online/D.devices.length*100).toFixed(1) + '%;background:var(--good)"></i>'
+    + '<i style="flex:1;background:var(--surface-3)"></i>',
+      '离线 ' + (D.devices.length - online) + ' 台，已全部生成告警')
++ kpi('待处理告警', pending.length, '/ ' + live.length + ' 在告',
+      '<i style="width:' + (live.length ? pending.length/live.length*100 : 0).toFixed(1)
+    + '%;background:var(--critical)"></i><i style="flex:1;background:var(--surface-3)"></i>',
+      '其中严重 ' + live.filter(function(a){ return a.level === '严重'; }).length + ' 条')
++ kpi('今日会议', todays.filter(function(b){ return b.state !== '已取消'; }).length, '场',
+      '<i style="width:' + (todays.length ? (todays.filter(function(b){
+        return b.state === '已结束'; }).length/todays.length*100) : 0).toFixed(1)
+    + '%;background:var(--accent)"></i><i style="flex:1;background:var(--surface-3)"></i>',
+      '已取消 ' + todays.filter(function(b){ return b.state === '已取消'; }).length
+    + ' 场 · 进行中 ' + todays.filter(function(b){ return b.state === '进行中'; }).length)
++ kpi('会议室启用', usedCount, '/ ' + rooms.length,
+      '<i style="width:' + (usedCount/rooms.length*100).toFixed(1)
+    + '%;background:var(--accent)"></i><i style="flex:1;background:var(--surface-3)"></i>',
+      '今日有会议安排的会议室数');
+
+$('dashDate').textContent = todayStr;
+renderGantt($('dashGantt'), todayStr);
+
+var dc = D.driver_counts;
+var dmax = Math.max.apply(null, Object.keys(dc).map(function(k){ return dc[k]; }));
+$('devTotal').textContent = D.devices.length + ' 台可寻址';
+$('devDist').innerHTML = Object.keys(dc).sort(function(a,b){ return dc[b]-dc[a]; })
+  .map(function(k){
+    return '<div class="drow"><div class="dn" title="' + esc(DRIVER_LABEL[k]||k) + '">'
+      + esc(DRIVER_LABEL[k] || k) + '</div><div class="db"><i style="width:'
+      + (dc[k]/dmax*100).toFixed(1) + '%"></i></div><div class="dv">' + dc[k] + '</div></div>';
+  }).join('');
+
+function detailText(a){
+  return a.code === 'DEV_OFFLINE'
+    ? humanErr(a.detail.replace('探测失败：',''))
+    : a.detail;
+}
+function levelPill(level){
+  var cls = level === '严重' ? 'crit' : 'warn';
+  return '<span class="pill ' + cls + '">' + esc(level) + '</span>';
+}
+$('topAlarm').innerHTML =
+  '<thead><tr><th>设备</th><th>故障</th><th>等级</th><th style="text-align:right">发生</th></tr></thead><tbody>'
+  + live.slice().sort(function(a,b){ return b.occurrences - a.occurrences; })
+      .slice(0,7).map(function(a){
+    return '<tr><td>' + esc(a.device_name) + '<br><span class="tag">'
+      + esc(roomName[a.space_id] || a.space_id) + '</span></td>'
+      + '<td>' + esc(a.name) + '<br><span class="dim" style="font-size:11px" title="'
+      + esc(a.detail) + '">' + esc(detailText(a)) + '</span></td>'
+      + '<td>' + levelPill(a.level) + '</td>'
+      + '<td class="num">' + a.occurrences + '</td></tr>';
+  }).join('') + '</tbody>';
+
+/* ---------------- 设备视图 ---------------- */
+var scope = 'all';
+var treeHtml = '<button class="tnode" data-sp="all" aria-pressed="true">全部空间'
+  + '<span class="cnt">' + D.devices.length + '</span></button>';
+floors.forEach(function(f){
+  var kids = D.spaces.filter(function(s){ return s.parent === f.id; });
+  if (!kids.length) return;
+  treeHtml += '<div class="tnode floor">' + esc(f.name) + '</div>';
+  kids.forEach(function(r){
+    var n = D.devices.filter(function(d){ return d.space_id === r.id; }).length;
+    treeHtml += '<button class="tnode" data-sp="' + esc(r.id) + '" aria-pressed="false">'
+      + esc(r.name) + '<span class="cnt">' + n + '</span></button>';
+  });
+});
+$('tree').innerHTML = treeHtml;
+
+function fmtMetrics(d){
+  var m = d.metrics || {};
+  var out = [];
+  if (m.voltage != null) out.push(m.voltage.toFixed(1) + ' V');
+  if (m.current != null) out.push(m.current.toFixed(2) + ' A');
+  if (m.active_mics != null) out.push(m.active_mics + ' 路开启');
+  if (!out.length && d.channels) out.push(d.channels.filter(Boolean).length
+    + '/' + d.channels.length + ' 通道');
+  return out.join(' · ') || '—';
+}
+
+function renderDevices(){
+  var q = ($('devSearch').value || '').trim().toLowerCase();
+  var list = D.devices.filter(function(d){
+    if (scope !== 'all' && d.space_id !== scope) return false;
+    if (!q) return true;
+    return (d.name + ' ' + d.model + ' ' + (d.ip||'')).toLowerCase().indexOf(q) >= 0;
+  });
+  $('devScope').textContent = scope === 'all' ? '全部 ' + rooms.length + ' 个会议室'
+                                              : (roomName[scope] || scope);
+  if (!list.length){
+    $('devTable').innerHTML = '<tbody><tr><td class="empty">没有匹配的设备</td></tr></tbody>';
+    return;
+  }
+  $('devTable').innerHTML =
+    '<thead><tr><th>设备</th><th>型号</th><th>所在空间</th><th>地址</th>'
+    + '<th>实时读数</th><th style="text-align:right">时延</th><th>状态</th></tr></thead><tbody>'
+    + list.map(function(d){
+      return '<tr><td>' + esc(d.name) + '</td>'
+        + '<td class="mono" style="font-size:11.5px">' + esc(d.model) + '</td>'
+        + '<td class="dim">' + esc(roomName[d.space_id] || d.space_id) + '</td>'
+        + '<td class="mono dim" style="font-size:11.5px">' + esc(d.ip) + ':' + d.port + '</td>'
+        + '<td class="mono" style="font-size:11.5px">' + esc(fmtMetrics(d)) + '</td>'
+        + '<td class="num dim">' + (d.latency_ms != null ? d.latency_ms + ' ms' : '—') + '</td>'
+        + '<td>' + (d.online ? '<span class="pill ok">在线</span>'
+                             : '<span class="pill off">离线</span>') + '</td></tr>';
+    }).join('') + '</tbody>';
+}
+$('tree').addEventListener('click', function(e){
+  var b = e.target.closest('button.tnode');
+  if (!b || !b.dataset.sp) return;
+  scope = b.dataset.sp;
+  $('tree').querySelectorAll('button.tnode').forEach(function(o){
+    o.setAttribute('aria-pressed', String(o === b)); });
+  renderDevices();
+});
+$('devSearch').addEventListener('input', renderDevices);
+renderDevices();
+
+/* ---------------- 告警视图 ---------------- */
+var afilter = 'all';
+function renderAlarms(){
+  var list = live.filter(function(a){
+    if (afilter === 'all') return true;
+    if (afilter === '严重') return a.level === '严重';
+    return a.state === afilter;
+  }).sort(function(a,b){ return b.occurrences - a.occurrences; });
+  $('alarmCount').textContent = list.length + ' 条';
+  $('alarmTable').innerHTML =
+    '<thead><tr><th>故障</th><th>设备 / 型号</th><th>空间</th><th>实测</th>'
+    + '<th>首次</th><th style="text-align:right">发生</th><th>等级</th><th>处理</th></tr></thead><tbody>'
+    + (list.length ? list.map(function(a){
+      return '<tr><td>' + esc(a.name) + '</td>'
+        + '<td>' + esc(a.device_name) + '<br><span class="tag">' + esc(a.model) + '</span></td>'
+        + '<td class="dim">' + esc(roomName[a.space_id] || a.space_id) + '</td>'
+        + '<td style="font-size:11.5px" title="' + esc(a.detail) + '">'
+        + esc(detailText(a)) + '</td>'
+        + '<td class="mono dim" style="font-size:11.5px">' + esc(a.first_raised.slice(5,16).replace('T',' ')) + '</td>'
+        + '<td class="num">' + a.occurrences + '</td>'
+        + '<td>' + levelPill(a.level) + '</td>'
+        + '<td class="dim">' + esc(a.state) + '</td></tr>';
+    }).join('') : '<tr><td colspan="8" class="empty">没有符合条件的告警</td></tr>') + '</tbody>';
+}
+document.querySelectorAll('[data-af]').forEach(function(b){
+  b.addEventListener('click', function(){
+    afilter = b.dataset.af;
+    document.querySelectorAll('[data-af]').forEach(function(o){
+      o.setAttribute('aria-pressed', String(o === b)); });
+    renderAlarms();
+  });
+});
+renderAlarms();
+
+/* ---------------- 日程视图 ---------------- */
+var days = [];
+for (var i = -2; i <= 4; i++){
+  var d = new Date(NOW); d.setDate(d.getDate() + i);
+  days.push(ymd(d));
+}
+var curDay = todayStr;
+$('dayPicker').innerHTML = days.map(function(d){
+  var lab = d.slice(5) + (d === todayStr ? ' 今天' : '');
+  return '<button class="btn" data-day="' + d + '" aria-pressed="'
+       + (d === curDay) + '">' + lab + '</button>';
+}).join('');
+function renderBook(){
+  var n = renderGantt($('bookGantt'), curDay);
+  $('bookDate').textContent = curDay;
+  $('bookCount').textContent = n + ' 场预约';
+}
+$('dayPicker').addEventListener('click', function(e){
+  var b = e.target.closest('[data-day]');
+  if (!b) return;
+  curDay = b.dataset.day;
+  $('dayPicker').querySelectorAll('[data-day]').forEach(function(o){
+    o.setAttribute('aria-pressed', String(o === b)); });
+  renderBook();
+});
+renderBook();
+
+/* ---------------- 视图切换 ---------------- */
+document.querySelectorAll('.tab').forEach(function(t){
+  t.addEventListener('click', function(){
+    document.querySelectorAll('.tab').forEach(function(o){
+      o.setAttribute('aria-selected', String(o === t)); });
+    ['dash','dev','alarm','book'].forEach(function(v){
+      $('v-' + v).hidden = (v !== t.dataset.v); });
+  });
+});
+
+/* ---------------- 页脚与横幅 ---------------- */
+$('stamp').textContent = '采集于 ' + D.generated_at.replace('T',' ');
+$('bannerTxt').innerHTML = '全部数字由 <code>sim/run.py</code> 的模拟设备真实采集而来 —— '
+  + D.devices.length + ' 台设备走 TCP/Modbus-TCP 轮询，告警由读数判出，'
+  + '空间与型号来自 ' + esc(D.source) + '。<b>不是真实医院数据。</b>';
+$('foot').innerHTML = '会议物联运维控制台 · 界面原型。日程色阶为单一蓝相序数阶（进行中→待开始→已结束），'
+  + '告警等级同时用颜色、圆点与文字标注，不单靠颜色传达。'
+  + '设备读数中电压电流来自模拟时序电源的 ASCII 回应，通道状态来自 Modbus-TCP 读线圈。';
+})();
+</script>

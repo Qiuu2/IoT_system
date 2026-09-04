@@ -1,0 +1,37 @@
+{
+  "id": "rel08",
+  "model": "EMeta-REL08-1U",
+  "label": "8路网络继电器",
+  "source": "清单.xlsx 行32 · 网络电源控制器",
+  "confidence": {
+    "transport": "confirmed",
+    "framing": "confirmed",
+    "commands": "confirmed",
+    "telemetry": "n/a"
+  },
+  "confirmed_facts": [
+    "局域网支持 TCP、UDP、Modbus-TCP 协议",
+    "8路继电器，每路 COM/NC/NO，接通20A 分断30A",
+    "支持常开常闭、点动脉冲、顺序动作",
+    "Modbus-TCP 是公开标准，故 framing 与 commands 均为 confirmed"
+  ],
+  "transport": {
+    "type": "modbus-tcp",
+    "base_port": 502,
+    "unit_id": 1
+  },
+  "channels": 8,
+  "modbus": {
+    "coil_base": 0,
+    "coil_count": 8,
+    "functions": [
+      1,
+      5,
+      15
+    ],
+    "desc": "读线圈/写单线圈/写多线圈"
+  },
+  "probe": {
+    "mode": "modbus"
+  }
+}

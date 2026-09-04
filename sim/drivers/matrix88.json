@@ -1,0 +1,48 @@
+{
+  "id": "matrix88",
+  "model": "EMeta-JZ-M0808S",
+  "label": "8进8出HDMI 4K无缝矩阵",
+  "source": "清单.xlsx 行7 等 · 高清矩阵8路",
+  "confidence": {
+    "transport": "guessed",
+    "framing": "guessed",
+    "commands": "guessed",
+    "telemetry": "n/a"
+  },
+  "confirmed_facts": [
+    "8 输入 8 输出，4K 无缝切换",
+    "清单未写明控制方式；此处按 AV 矩阵通行的 ASCII over TCP 假设",
+    "指令语法参照行业惯例 (SW in out.)，拿到文档后必须替换"
+  ],
+  "transport": {
+    "type": "tcp",
+    "base_port": 8831,
+    "line_ending": "\r\n"
+  },
+  "inputs": 8,
+  "outputs": 8,
+  "commands": [
+    {
+      "tx": "SW {inp} {outp}.",
+      "rx": "SW {inp} {outp} OK",
+      "desc": "切换单路"
+    },
+    {
+      "tx": "SW {inp} ALL.",
+      "rx": "SW {inp} ALL OK",
+      "desc": "一入全出"
+    },
+    {
+      "tx": "STA.",
+      "rx": "STA {routing}",
+      "desc": "查询当前路由"
+    }
+  ],
+  "probe": {
+    "mode": "line",
+    "query": "STA.",
+    "fields": [
+      "routing"
+    ]
+  }
+}

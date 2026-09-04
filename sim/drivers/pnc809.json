@@ -1,0 +1,58 @@
+{
+  "id": "pnc809",
+  "model": "EC-PNC809",
+  "label": "8路网络时序电源",
+  "source": "清单.xlsx 行3 等 · 电源时序器",
+  "confidence": {
+    "transport": "confirmed",
+    "framing": "guessed",
+    "commands": "guessed",
+    "telemetry": "partial"
+  },
+  "confirmed_facts": [
+    "8路输出，每路≥13A，整机最大负载≥40A，32A空开保护",
+    "支持 TCPServer/TCPClient/UDPClient/UDPServer 四种工作模式",
+    "每路延时1秒，可选3秒、10秒",
+    "电压高于245V或低于195V闪亮警示"
+  ],
+  "transport": {
+    "type": "tcp",
+    "base_port": 8811,
+    "line_ending": "\r\n"
+  },
+  "channels": 8,
+  "telemetry": {
+    "voltage": {
+      "unit": "V",
+      "nominal": 220.0,
+      "jitter": 6.0,
+      "alarm_high": 245.0,
+      "alarm_low": 195.0
+    }
+  },
+  "commands": [
+    {
+      "tx": "STAT?",
+      "rx": "STAT {voltage} {channel_bits}",
+      "desc": "查询状态"
+    },
+    {
+      "tx": "PWR {ch} ON",
+      "rx": "OK {ch} 1",
+      "desc": "单路上电"
+    },
+    {
+      "tx": "PWR {ch} OFF",
+      "rx": "OK {ch} 0",
+      "desc": "单路断电"
+    }
+  ],
+  "probe": {
+    "mode": "line",
+    "query": "STAT?",
+    "fields": [
+      "voltage",
+      "channel_bits"
+    ]
+  }
+}

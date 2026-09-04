@@ -1,0 +1,50 @@
+{
+  "id": "chm9",
+  "model": "EM-PM-CHM9",
+  "label": "全数字化会议系统主机",
+  "source": "清单.xlsx 行40/106 · 数字会议主机",
+  "confidence": {
+    "transport": "guessed",
+    "framing": "guessed",
+    "commands": "guessed",
+    "telemetry": "partial"
+  },
+  "confirmed_facts": [
+    "配套 EM-PM-CHM9T1 升降器数字会议话筒，主席1 + 代表 15~25",
+    "清单未写明控制协议；按 ASCII over TCP 假设"
+  ],
+  "transport": {
+    "type": "tcp",
+    "base_port": 8841,
+    "line_ending": "\r\n"
+  },
+  "commands": [
+    {
+      "tx": "MIC {seat} ON",
+      "rx": "OK MIC {seat} 1",
+      "desc": "开启发言单元"
+    },
+    {
+      "tx": "MIC {seat} OFF",
+      "rx": "OK MIC {seat} 0",
+      "desc": "关闭发言单元"
+    },
+    {
+      "tx": "MIC ALL OFF",
+      "rx": "OK MIC ALL 0",
+      "desc": "全部关闭"
+    },
+    {
+      "tx": "STAT?",
+      "rx": "STAT {active_count}",
+      "desc": "查询开启数"
+    }
+  ],
+  "probe": {
+    "mode": "line",
+    "query": "STAT?",
+    "fields": [
+      "active_mics"
+    ]
+  }
+}

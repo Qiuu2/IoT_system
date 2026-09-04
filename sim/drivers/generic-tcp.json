@@ -1,0 +1,31 @@
+{
+  "id": "generic-tcp",
+  "model": "-",
+  "label": "通用TCP设备（探活）",
+  "source": "截图『主机状态 · 设备使用状态』：检测方式 PING / 协议端口 / 编码类型 ASCII",
+  "confidence": {
+    "transport": "confirmed",
+    "framing": "n/a",
+    "commands": "n/a",
+    "telemetry": "n/a"
+  },
+  "confirmed_facts": [
+    "参考站点对这类设备只做 PING/TCP 探活并记录检测耗时",
+    "电视、摄像头、录播主机、功放等归入此类，先只判在线离线"
+  ],
+  "transport": {
+    "type": "tcp",
+    "base_port": 8851,
+    "line_ending": "\r\n"
+  },
+  "commands": [
+    {
+      "tx": "*",
+      "rx": "",
+      "desc": "接受连接即视为在线，不解析内容"
+    }
+  ],
+  "probe": {
+    "mode": "tcp"
+  }
+}

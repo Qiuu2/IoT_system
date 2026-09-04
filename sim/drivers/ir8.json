@@ -1,0 +1,41 @@
+{
+  "id": "ir8",
+  "model": "EMeta-IR-8RJ45",
+  "label": "网络八路红外扩展器",
+  "source": "清单.xlsx 行31 · 红外存储网络模块",
+  "confidence": {
+    "transport": "confirmed",
+    "framing": "guessed",
+    "commands": "guessed",
+    "telemetry": "n/a"
+  },
+  "confirmed_facts": [
+    "1个 TCP/UDP 网络接口 + 1个红外端口",
+    "模块内可存储 ≥200 组红外数据",
+    "可通过 TCP/UDP 方式调取红外信号",
+    "38K 红外发射，通讯接口 RJ45、RS485"
+  ],
+  "transport": {
+    "type": "tcp",
+    "base_port": 8821,
+    "line_ending": "\r\n"
+  },
+  "banks": 8,
+  "codes_per_bank": 25,
+  "commands": [
+    {
+      "tx": "IR {bank} {index}",
+      "rx": "OK {bank} {index}",
+      "desc": "发射已存储的红外码"
+    },
+    {
+      "tx": "LIST {bank}",
+      "rx": "BANK {bank} {count}",
+      "desc": "查询某路已存码数"
+    }
+  ],
+  "probe": {
+    "mode": "tcp",
+    "note": "清单未写明状态查询指令，只做建连探活"
+  }
+}

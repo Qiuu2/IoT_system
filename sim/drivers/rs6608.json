@@ -1,0 +1,34 @@
+{
+  "id": "rs6608",
+  "model": "EMeta-RS6608",
+  "label": "八串口服务器",
+  "source": "清单.xlsx 行30 · 联网扩展模块（12口）",
+  "confidence": {
+    "transport": "confirmed",
+    "framing": "confirmed",
+    "commands": "n/a",
+    "telemetry": "n/a"
+  },
+  "confirmed_facts": [
+    "≥8 路 RS232/RS485/RS422，可独立全双工，各口可配不同波特率",
+    "支持 TCP Server / TCP Client / UDP / UDP组播，支持类 RFC2217",
+    "波特率 300-115200，网络与串口缓存各 ≥10KByte",
+    "打包时间 50ms，打包长度 1472 字节",
+    "本身不是受控设备，是透传通道：每个串口映射一个 TCP 端口"
+  ],
+  "transport": {
+    "type": "tcp-passthrough",
+    "base_port": 4001,
+    "ports": 8
+  },
+  "serial_defaults": {
+    "baud": 9600,
+    "data": 8,
+    "parity": "N",
+    "stop": 1
+  },
+  "probe": {
+    "mode": "tcp",
+    "note": "透传通道本身无状态查询，只做建连探活"
+  }
+}
