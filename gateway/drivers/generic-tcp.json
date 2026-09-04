@@ -27,5 +27,6 @@
   ],
   "probe": {
     "mode": "tcp"
-  }
+  },
+  "points": []
 }

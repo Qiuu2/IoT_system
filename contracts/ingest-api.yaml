@@ -1,0 +1,346 @@
+openapi: 3.1.0
+info:
+  title: 接入网关 ↔ 平台 契约
+  version: 0.1.0
+  description: |
+    甲（平台）与乙（接入网关）之间的唯一接口约定。双方各自照此开发，互不阻塞。
+
+    方向约定：
+      * 上行（网关 → 平台）：注册、遥测、事件、心跳。一律由网关主动 POST。
+      * 下行（平台 → 网关）：控制指令。由网关**轮询拉取**，而非平台反向调用。
+
+    为什么下行也用网关拉：本项目信息网络分内网/外网/专用网三张物理隔离网
+    （招标清单 5–44 行）。设备多在专用网，平台可能在另一侧。让网关只发起出站连接，
+    可以适配单向网闸、防火墙单向放行等多种网络形态；若改成平台反向调用网关，
+    一旦网闸是单向的，控制链路直接不通。
+
+    幂等：所有上行接口按 batch_id 幂等，网关断网重连后可安全重发。
+
+servers:
+  - url: http://127.0.0.1:8090/api/v1
+    description: 本地 mock（gateway/mock_platform.py）
+  - url: https://{host}/api/v1
+    variables: { host: { default: platform.internal } }
+
+security:
+  - gatewayToken: []
+
+paths:
+  /registry/sync:
+    post:
+      summary: 网关上报它管理的设备与点位
+      description: |
+        网关启动时、以及设备清单变化时调用。平台据此建立/更新设备台账与点位表。
+        全量上报，平台按 gateway_id 做差集处理（本次未出现的设备标记为「已移除」）。
+      operationId: syncRegistry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/RegistrySync' }
+      responses:
+        '200':
+          description: 已受理
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  accepted_devices: { type: integer }
+                  accepted_points: { type: integer }
+                  removed_devices: { type: integer }
+
+  /telemetry:
+    post:
+      summary: 批量上报遥测读数
+      description: |
+        网关按采集周期批量推送。**允许延迟上报**：网关断网期间数据落本地队列，
+        恢复后按原始时间戳补传，平台不得以「时间戳过旧」为由丢弃。
+      operationId: postTelemetry
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/TelemetryBatch' }
+      responses:
+        '202': { description: 已接收 }
+        '409':
+          description: batch_id 重复，已忽略（幂等命中，网关应视为成功）
+
+  /events:
+    post:
+      summary: 批量上报事件
+      description: |
+        事件是「状态跃迁」，不是周期数据：设备上下线、越限、越限恢复、指令被拒。
+        平台负责告警聚合与工单派生，网关不做业务判断，只报事实。
+      operationId: postEvents
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/EventBatch' }
+      responses:
+        '202': { description: 已接收 }
+        '409': { description: batch_id 重复，已忽略 }
+
+  /heartbeat:
+    post:
+      summary: 网关心跳
+      description: 平台据此判断网关本身是否存活，与设备在线状态是两回事。
+      operationId: heartbeat
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/Heartbeat' }
+      responses:
+        '200':
+          description: 正常
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  server_time: { type: string, format: date-time }
+                  poll_interval_s:
+                    type: integer
+                    description: 平台可动态下调网关的指令轮询间隔
+
+  /commands/pending:
+    get:
+      summary: 拉取待执行的控制指令
+      operationId: pullCommands
+      parameters:
+        - { name: gateway_id, in: query, required: true, schema: { type: string } }
+        - { name: max, in: query, schema: { type: integer, default: 20, maximum: 100 } }
+      responses:
+        '200':
+          description: 待执行指令，可能为空
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  commands:
+                    type: array
+                    items: { $ref: '#/components/schemas/Command' }
+
+  /commands/{command_id}/result:
+    post:
+      summary: 回报指令执行结果
+      description: |
+        无论成功失败都必须回报。平台据此结束指令生命周期并留痕
+        （招标清单 429-8 要求主要操作全部留痕、可回溯）。
+      operationId: reportCommandResult
+      parameters:
+        - { name: command_id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: '#/components/schemas/CommandResult' }
+      responses:
+        '200': { description: 已记录 }
+
+components:
+  securitySchemes:
+    gatewayToken:
+      type: http
+      scheme: bearer
+      description: 每个网关一个长期令牌，由平台签发
+
+  schemas:
+    Point:
+      type: object
+      required: [key, name, kind, datatype]
+      properties:
+        key:
+          type: string
+          description: 设备内唯一的点位标识，如 voltage / current / ch3
+          examples: [voltage]
+        name: { type: string, examples: ['输入电压'] }
+        kind:
+          type: string
+          enum: [read, write, readwrite]
+          description: |
+            **写权限在此声明，平台不得越权下发。**
+            医院场景下医护对讲、防冲撞柱等系统的点位一律 read，
+            由网关侧兜底拒绝，不依赖平台自觉。
+        datatype: { type: string, enum: [number, bool, string, enum] }
+        unit: { type: string, examples: [V, A, kWh, °C] }
+        min: { type: number }
+        max: { type: number }
+        enum_values:
+          type: array
+          items: { type: string }
+
+    Device:
+      type: object
+      required: [device_id, name, driver, points]
+      properties:
+        device_id:
+          type: string
+          description: 全局唯一，建议 <网关ID>-<驱动>-<序号>，一旦分配不可变更
+        name: { type: string }
+        model: { type: string, examples: [EMeta-PNC218] }
+        vendor: { type: string }
+        driver: { type: string, examples: [pnc218] }
+        subsystem:
+          type: string
+          description: 所属子系统，对应招标清单的备注列
+          examples: ['建筑能效控制系统BA']
+        space_ref:
+          type: string
+          description: |
+            空间引用。网关只知道自己现场的位置编码，
+            **空间树的主数据在平台侧（甲负责）**，此处填平台分配的空间编码或现场位号，
+            由平台完成映射。
+        ip: { type: string }
+        port: { type: integer }
+        protocol:
+          type: string
+          enum: [tcp, modbus-tcp, tcp-passthrough, serial, bacnet, opc-ua, http, onvif, gb28182, vendor-sdk]
+        confidence:
+          type: object
+          description: |
+            该驱动的可信度标注。清单给了传输层参数但普遍没给指令码表，
+            猜测部分必须显式标出，避免被当作已确认需求。
+          properties:
+            transport: { type: string, enum: [confirmed, guessed, n/a] }
+            commands:  { type: string, enum: [confirmed, guessed, n/a] }
+        points:
+          type: array
+          items: { $ref: '#/components/schemas/Point' }
+
+    RegistrySync:
+      type: object
+      required: [gateway_id, devices]
+      properties:
+        gateway_id: { type: string }
+        gateway_version: { type: string }
+        devices:
+          type: array
+          items: { $ref: '#/components/schemas/Device' }
+
+    Sample:
+      type: object
+      required: [key, value]
+      properties:
+        key: { type: string }
+        value:
+          description: 类型由点位 datatype 决定
+          oneOf:
+            - { type: number }
+            - { type: boolean }
+            - { type: string }
+        quality:
+          type: string
+          enum: [good, stale, bad]
+          default: good
+          description: bad 表示采到了但值不可信，与「采不到」（设备离线事件）区分
+
+    Reading:
+      type: object
+      required: [device_id, ts, online]
+      properties:
+        device_id: { type: string }
+        ts:
+          type: string
+          format: date-time
+          description: 采集时刻，**由网关打点**，不是平台收到的时刻
+        online: { type: boolean }
+        latency_ms: { type: number }
+        samples:
+          type: array
+          items: { $ref: '#/components/schemas/Sample' }
+        error:
+          type: string
+          description: online=false 时给出原因，供排障
+
+    TelemetryBatch:
+      type: object
+      required: [gateway_id, batch_id, readings]
+      properties:
+        gateway_id: { type: string }
+        batch_id:
+          type: string
+          description: 网关生成的唯一批次号，平台据此幂等去重
+        readings:
+          type: array
+          maxItems: 1000
+          items: { $ref: '#/components/schemas/Reading' }
+
+    Event:
+      type: object
+      required: [event_id, device_id, type, ts]
+      properties:
+        event_id: { type: string, description: 网关生成，用于幂等 }
+        device_id: { type: string }
+        point_key: { type: string, description: 与具体点位相关时填写 }
+        type:
+          type: string
+          enum: [device_online, device_offline, limit_exceeded, limit_restored, command_rejected]
+        code:
+          type: string
+          description: 稳定的故障码，平台按 (device_id, code) 聚合告警
+          examples: [DEV_OFFLINE, OVER_VOLTAGE]
+        severity: { type: string, enum: [info, warning, major, critical] }
+        detail: { type: string, examples: ['实测 251.3 V'] }
+        value: { description: 触发时的实测值 }
+        ts: { type: string, format: date-time }
+
+    EventBatch:
+      type: object
+      required: [gateway_id, batch_id, events]
+      properties:
+        gateway_id: { type: string }
+        batch_id: { type: string }
+        events:
+          type: array
+          maxItems: 500
+          items: { $ref: '#/components/schemas/Event' }
+
+    Heartbeat:
+      type: object
+      required: [gateway_id, ts]
+      properties:
+        gateway_id: { type: string }
+        ts: { type: string, format: date-time }
+        version: { type: string }
+        devices_total: { type: integer }
+        devices_online: { type: integer }
+        queue_depth:
+          type: integer
+          description: 本地待发队列深度。持续增长说明网关到平台的链路有问题
+        last_sweep_ms: { type: number }
+
+    Command:
+      type: object
+      required: [command_id, device_id, point_key, value]
+      properties:
+        command_id: { type: string }
+        device_id: { type: string }
+        point_key: { type: string }
+        value: { description: 目标值 }
+        issued_by: { type: string, description: 平台侧操作人，供网关留痕 }
+        issued_at: { type: string, format: date-time }
+        expire_at:
+          type: string
+          format: date-time
+          description: |
+            过期后网关必须拒绝执行。防止网关断网数小时后，
+            把一条早已失去意义的开关指令补发到现场设备上。
+
+    CommandResult:
+      type: object
+      required: [command_id, status, ts]
+      properties:
+        command_id: { type: string }
+        status:
+          type: string
+          enum: [succeeded, failed, rejected, expired]
+          description: rejected 表示网关侧主动拒绝（点位只读、越权、过期）
+        detail: { type: string }
+        readback:
+          description: 执行后回读的实际值，能回读的必须回读
+        ts: { type: string, format: date-time }

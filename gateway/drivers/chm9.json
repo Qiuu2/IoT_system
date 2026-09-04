@@ -46,5 +46,13 @@
     "fields": [
       "active_mics"
     ]
-  }
+  },
+  "points": [
+    {
+      "key": "active_mics",
+      "name": "开启话筒数",
+      "kind": "read",
+      "datatype": "number"
+    }
+  ]
 }

@@ -12,7 +12,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parent.parent
 BOM = ROOT / 'docs' / '设备BOM.csv'
-DRIVERS = ROOT / 'sim' / 'drivers'
+DRIVERS = ROOT / 'gateway' / 'drivers'
 
 # BOM 的「设备名称」→ 驱动。未命中的归入 generic-tcp（只做探活）。
 DRIVER_BY_NAME = [

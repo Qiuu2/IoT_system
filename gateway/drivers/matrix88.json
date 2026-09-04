@@ -44,5 +44,55 @@
     "fields": [
       "routing"
     ]
-  }
+  },
+  "points": [
+    {
+      "key": "ch1",
+      "name": "输出1信号源",
+      "kind": "readwrite",
+      "datatype": "number"
+    },
+    {
+      "key": "ch2",
+      "name": "输出2信号源",
+      "kind": "readwrite",
+      "datatype": "number"
+    },
+    {
+      "key": "ch3",
+      "name": "输出3信号源",
+      "kind": "readwrite",
+      "datatype": "number"
+    },
+    {
+      "key": "ch4",
+      "name": "输出4信号源",
+      "kind": "readwrite",
+      "datatype": "number"
+    },
+    {
+      "key": "ch5",
+      "name": "输出5信号源",
+      "kind": "readwrite",
+      "datatype": "number"
+    },
+    {
+      "key": "ch6",
+      "name": "输出6信号源",
+      "kind": "readwrite",
+      "datatype": "number"
+    },
+    {
+      "key": "ch7",
+      "name": "输出7信号源",
+      "kind": "readwrite",
+      "datatype": "number"
+    },
+    {
+      "key": "ch8",
+      "name": "输出8信号源",
+      "kind": "readwrite",
+      "datatype": "number"
+    }
+  ]
 }

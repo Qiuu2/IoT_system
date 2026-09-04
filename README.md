@@ -18,7 +18,10 @@
 | [`docs/设备BOM.csv`](docs/设备BOM.csv) | 116 行设备清单，按空间/子系统归类 |
 | [`docs/模拟器与数据契约.md`](docs/模拟器与数据契约.md) | 设备模拟器用法、驱动可信度标注、HTTP 数据契约 |
 | [`docs/参考站点采集指引.md`](docs/参考站点采集指引.md) | 参考站点采集：截图 / 结构 / 设计 token / SingleFile 快照 |
-| [`sim/`](sim/) | 设备模拟器、协议采集器、模拟数据生成 |
+| [`docs/接入层设计.md`](docs/接入层设计.md) | **乙的作业指引**：与甲并行的契约、模块职责、驱动工作流 |
+| [`contracts/ingest-api.yaml`](contracts/ingest-api.yaml) | 网关↔平台接口契约（甲乙唯一约定） |
+| [`gateway/`](gateway/) | 接入网关：驱动、采集、落盘队列、推送、指令执行 |
+| [`sim/`](sim/) | 设备模拟器（开发期用，上线删除） |
 | [`ui/`](ui/) | 界面原型模板与构建脚本 |
 | [`tools/extract_bom.py`](tools/extract_bom.py) | 需求与 BOM 的生成脚本 |
 

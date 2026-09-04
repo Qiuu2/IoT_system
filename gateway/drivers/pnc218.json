@@ -1,0 +1,218 @@
+{
+  "id": "pnc218",
+  "model": "EMeta-PNC218",
+  "label": "21路智能时序电源",
+  "source": "清单.xlsx 行33 · 智能电源监测管理器",
+  "confidence": {
+    "transport": "confirmed",
+    "framing": "guessed",
+    "commands": "guessed",
+    "telemetry": "confirmed"
+  },
+  "confirmed_facts": [
+    "21路：16路时序 + 2路常开 + 3路强电继电器",
+    "RS232 波特率 2400/9600/19200/38400，8N1",
+    "带电压电流监测，通过网络或RS232上传监控中心",
+    "整机额定 60A，单路 10A 万能插座",
+    "每路延时可设 1-999 秒"
+  ],
+  "transport": {
+    "type": "tcp",
+    "base_port": 8801,
+    "line_ending": "\r\n"
+  },
+  "channels": 21,
+  "telemetry": {
+    "voltage": {
+      "unit": "V",
+      "nominal": 220.0,
+      "jitter": 6.0,
+      "alarm_high": 245.0,
+      "alarm_low": 195.0
+    },
+    "current": {
+      "unit": "A",
+      "per_channel_on": 1.8,
+      "jitter": 0.5,
+      "max": 60.0
+    }
+  },
+  "commands": [
+    {
+      "tx": "STAT?",
+      "rx": "STAT {voltage} {current} {channel_bits}",
+      "desc": "查询整机状态"
+    },
+    {
+      "tx": "PWR {ch} ON",
+      "rx": "OK {ch} 1",
+      "desc": "单路上电"
+    },
+    {
+      "tx": "PWR {ch} OFF",
+      "rx": "OK {ch} 0",
+      "desc": "单路断电"
+    },
+    {
+      "tx": "SEQ ON",
+      "rx": "OK SEQ 1",
+      "desc": "按时序依次上电"
+    },
+    {
+      "tx": "SEQ OFF",
+      "rx": "OK SEQ 0",
+      "desc": "按时序逆序断电"
+    }
+  ],
+  "probe": {
+    "mode": "line",
+    "query": "STAT?",
+    "fields": [
+      "voltage",
+      "current",
+      "channel_bits"
+    ]
+  },
+  "points": [
+    {
+      "key": "voltage",
+      "name": "输入电压",
+      "kind": "read",
+      "datatype": "number",
+      "unit": "V"
+    },
+    {
+      "key": "current",
+      "name": "整机电流",
+      "kind": "read",
+      "datatype": "number",
+      "unit": "A"
+    },
+    {
+      "key": "ch1",
+      "name": "第1路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch2",
+      "name": "第2路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch3",
+      "name": "第3路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch4",
+      "name": "第4路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch5",
+      "name": "第5路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch6",
+      "name": "第6路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch7",
+      "name": "第7路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch8",
+      "name": "第8路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch9",
+      "name": "第9路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch10",
+      "name": "第10路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch11",
+      "name": "第11路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch12",
+      "name": "第12路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch13",
+      "name": "第13路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch14",
+      "name": "第14路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch15",
+      "name": "第15路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch16",
+      "name": "第16路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch17",
+      "name": "第17路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch18",
+      "name": "第18路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch19",
+      "name": "第19路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch20",
+      "name": "第20路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch21",
+      "name": "第21路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    }
+  ]
+}

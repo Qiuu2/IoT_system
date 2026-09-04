@@ -54,5 +54,62 @@
       "voltage",
       "channel_bits"
     ]
-  }
+  },
+  "points": [
+    {
+      "key": "voltage",
+      "name": "输入电压",
+      "kind": "read",
+      "datatype": "number",
+      "unit": "V"
+    },
+    {
+      "key": "ch1",
+      "name": "第1路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch2",
+      "name": "第2路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch3",
+      "name": "第3路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch4",
+      "name": "第4路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch5",
+      "name": "第5路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch6",
+      "name": "第6路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch7",
+      "name": "第7路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    },
+    {
+      "key": "ch8",
+      "name": "第8路输出",
+      "kind": "readwrite",
+      "datatype": "bool"
+    }
+  ]
 }
