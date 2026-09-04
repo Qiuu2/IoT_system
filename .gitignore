@@ -5,3 +5,4 @@ node_modules/
 *.log
 dataset.json
 payload.json
+capture/
